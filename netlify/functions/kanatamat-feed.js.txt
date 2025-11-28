@@ -1,0 +1,46 @@
+const FB_GROUP_ID = process.env.FB_GROUP_ID || '6959555337485025';
+const FB_ACCESS_TOKEN = process.env.FB_ACCESS_TOKEN;
+
+exports.handler = async () => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Content-Type': 'application/json'
+  };
+
+  if (!FB_ACCESS_TOKEN) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Missing FB_ACCESS_TOKEN' })
+    };
+  }
+
+  try {
+    const fields = [
+      'message',
+      'created_time',
+      'permalink_url',
+      'full_picture',
+      'from'
+    ].join(',');
+
+    const url = `https://graph.facebook.com/v21.0/${FB_GROUP_ID}/feed?fields=${fields}&access_token=${FB_ACCESS_TOKEN}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    const posts = (data.data || []).slice(0, 10);
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ posts })
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Server error', details: err.toString() })
+    };
+  }
+};
